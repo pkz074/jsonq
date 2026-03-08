@@ -1,6 +1,7 @@
 #include "Parser.hpp"
 #include <stdexcept>
 #include "JsonValue.hpp"
+#include <vector>
 
 Parser::Parser(Lexer lexer) : lexer(lexer) {
     advance();
@@ -11,7 +12,11 @@ void Parser::advance() {
     current = lexer.nextToken();
 }
 
-void Parser::expect() {
+void Parser::expect(TokenType type) {
+
+    if (current.type != type)
+        throw std::runtime_error("unexpected token");
+    advance();
 
 
 }
@@ -21,8 +26,58 @@ JsonValue Parser::parse() {
 }
 
 
-JsonValue Parser::parseObject() { throw std::runtime_error("not implemented"); }
-JsonValue Parser::parseArray()  { throw std::runtime_error("not implemented"); }
+JsonValue Parser::parseObject() {
+
+    JsonObject obj;
+    advance(); // we start with "{"
+
+    if (current.type == TokenType::RBrace){
+        advance();
+        return JsonValue{obj};
+    }
+    while(true){
+
+        std::string key = current.value;
+        expect(TokenType::String);
+        expect(TokenType::Colon);
+        JsonValue val = parseValue();
+        obj.push_back({key, val});
+
+        if (current.type == TokenType::Comma) {
+            advance();
+        } else if (current.type == TokenType::RBrace){ // the last value doesnt have comma
+            advance();
+            return JsonValue{obj};
+        } else {
+            throw std::runtime_error("expected ',' or '}'");
+        }
+
+    }
+}
+JsonValue Parser::parseArray()  {
+
+    JsonArray arr;
+    advance();
+
+    if (current.type == TokenType::RBracket){
+        advance();
+        return JsonValue{arr};
+    }
+    while(true){
+
+        JsonValue val = parseValue();;
+        arr.push_back(val);
+
+        if (current.type == TokenType::Comma){
+            advance();
+        } else if (current.type == TokenType::RBracket){
+            advance();
+            return JsonValue{arr};
+        } else {
+            throw std::runtime_error("expected ']'");
+        }
+    }
+}
 
 JsonValue Parser::parseValue() {
 
