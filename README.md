@@ -13,7 +13,7 @@ any parsing libraries.
 Work in progress. Being built layer by layer:
 
 - [x] Lexer
-- [ ] Parser + AST
+- [x] Parser + AST
 - [ ] Pretty Printer
 - [ ] CLI
 - [ ] Query Engine
