@@ -3,8 +3,9 @@ project(jsonq)
 set(CMAKE_CXX_STANDARD 17)
 
 
-add_executable(jsonq src/main.cpp src/lexer/lexer.cpp)
+add_executable(jsonq src/main.cpp src/lexer/lexer.cpp src/parser/Parser.cpp src/printer/Printer.cpp)
 target_include_directories(jsonq PRIVATE src)
+
 
 
 include(FetchContent)
@@ -16,6 +17,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 
-add_executable(test_lexer tests/test_lexer.cpp src/lexer/lexer.cpp)
+add_executable(test_lexer tests/test_lexer.cpp src/lexer/lexer.cpp src/parser/Parser.cpp)
 target_include_directories(test_lexer PRIVATE src)
 target_link_libraries(test_lexer PRIVATE Catch2::Catch2WithMain)
+
+add_executable(test_parser tests/test_parser.cpp src/lexer/lexer.cpp src/parser/Parser.cpp)
+target_include_directories(test_parser PRIVATE src)
+target_link_libraries(test_parser PRIVATE Catch2::Catch2WithMain)
