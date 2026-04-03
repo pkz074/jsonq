@@ -14,7 +14,7 @@ Work in progress. Being built layer by layer:
 
 - [x] Lexer
 - [x] Parser + AST
-- [ ] Pretty Printer
+- [x] Pretty Printer
 - [ ] CLI
 - [ ] Query Engine
 - [ ] Schema Validator
