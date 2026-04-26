@@ -3,7 +3,7 @@ project(jsonq)
 set(CMAKE_CXX_STANDARD 17)
 
 
-add_executable(jsonq src/main.cpp src/lexer/lexer.cpp src/parser/Parser.cpp src/printer/Printer.cpp)
+add_executable(jsonq src/main.cpp src/lexer/lexer.cpp src/parser/Parser.cpp src/printer/Printer.cpp src/query/QueryEngine.cpp)
 target_include_directories(jsonq PRIVATE src)
 
 
