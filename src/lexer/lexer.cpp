@@ -27,8 +27,47 @@ Token Lexer::nextToken() {
         std::string buffer;
         pos++;
         while (pos < input.size() && input[pos] != '"') {
-            buffer += input[pos];
-            pos ++;
+            if (input[pos] == '\\') {
+                pos++;
+
+                if (pos >= input.size()) {
+                    throw std::runtime_error("unterminated string escape");
+                }
+
+                switch (input[pos]) {
+                    case '"':
+                        buffer += '"';
+                        break;
+                    case '\\':
+                        buffer += '\\';
+                        break;
+                    case '/':
+                        buffer += '/';
+                        break;
+                    case 'b':
+                        buffer += '\b';
+                        break;
+                    case 'f':
+                        buffer += '\f';
+                        break;
+                    case 'n':
+                        buffer += '\n';
+                        break;
+                    case 'r':
+                        buffer += '\r';
+                        break;
+                    case 't':
+                        buffer += '\t';
+                        break;
+                    default:
+                        throw std::runtime_error("invalid string escape");
+                }
+            }
+            else {
+                buffer += input[pos];
+            }
+
+            pos++;
         }
         if (pos >= input.size())
             throw std::runtime_error("unterminated string");

@@ -67,6 +67,26 @@ TEST_CASE("invalid JSON", "[parser][error]") {
     );
 }
 
+TEST_CASE("trailing tokens after JSON value are rejected", "[parser][error]") {
+    std::string input = R"({"name": "John"} {"extra": true})";
+    Lexer lexer(input);
+    Parser parser(lexer);
+
+    REQUIRE_THROWS_AS(parser.parse(), std::runtime_error);
+}
+
+TEST_CASE("escaped strings", "[parser][string]") {
+    std::string input = R"({"quote": "a\"b", "path": "a\\b", "line": "a\nb"})";
+    Lexer lexer(input);
+    Parser parser(lexer);
+
+    JsonValue result = parser.parse();
+
+    REQUIRE(result["quote"].asString() == "a\"b");
+    REQUIRE(result["path"].asString() == "a\\b");
+    REQUIRE(result["line"].asString() == "a\nb");
+}
+
 TEST_CASE("nested object", "[parser][object][nested]") {
     std::string input = R"({
         "user": {

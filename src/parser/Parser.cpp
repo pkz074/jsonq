@@ -22,7 +22,13 @@ void Parser::expect(TokenType type) {
 }
 
 JsonValue Parser::parse() {
-    return parseValue();
+    JsonValue value = parseValue();
+
+    if (current.type != TokenType::EoF) {
+        throw std::runtime_error("unexpected token after JSON value");
+    }
+
+    return value;
 }
 
 
