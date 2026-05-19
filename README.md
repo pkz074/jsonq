@@ -15,26 +15,59 @@ Work in progress. Being built layer by layer:
 - [x] Lexer
 - [x] Parser + AST
 - [x] Pretty Printer
-- [ ] CLI
-- [ ] Query Engine
+- [x] Basic CLI for reading and pretty-printing a JSON file
+- [x] Basic Query Engine for object keys and array indices
 - [ ] Schema Validator
 - [ ] Benchmarks
 
 ## Build
 
-\```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
-\```
+```bash
+cmake -S . -B build
+cmake --build build
+```
 
 ## Usage
 
-Coming soon.
+Pretty-print a JSON file:
+
+```bash
+./build/jsonq sample.json
+```
+
+Select values with a query:
+
+```bash
+./build/jsonq sample.json '$.name'
+./build/jsonq sample.json '$.hobbies[1]'
+./build/jsonq sample.json '$.hobbies[*]'
+```
+
+Supported query syntax:
+
+- `$` selects the whole document.
+- `.key` selects an object field.
+- `[n]` selects an array element by zero-based index.
+- `[*]` selects every element from an array and returns an array.
+- These can be combined, for example `$.user.hobbies[0]`.
+- Path steps after `[*]` are applied to every selected element, for example
+  `$.users[*].name`.
+
+The JSON lexer supports common string escapes such as `\"`, `\\`, `\/`, `\n`,
+`\r`, `\t`, `\b`, and `\f`. Unicode escapes like `\u0041` are not implemented
+yet.
+
+## Tests
+
+```bash
+./build/test_lexer
+./build/test_parser
+./build/test_query
+./build/test_printer
+```
 
 ## Tech
 
 - C++17
 - CMake
 - Catch2 (tests)
-- Google Benchmark (benchmarks)
