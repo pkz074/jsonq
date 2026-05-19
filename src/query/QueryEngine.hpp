@@ -1,12 +1,13 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "parser/JsonValue.hpp"
 
 
 struct Step {
     enum class Kind {Key, Index, Wildcard} kind;
     std::string key;
-    int index;
+    size_t index;
 
 };
 
