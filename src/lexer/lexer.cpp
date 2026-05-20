@@ -1,34 +1,48 @@
 #include "lexer.hpp"
 
+char Lexer::advance() {
+    char c = input[pos];
+    pos++;
+
+    if (c == '\n') {
+        line++;
+        column = 1;
+    }
+    else {
+        column++;
+    }
+
+    return c;
+}
+
 Token Lexer::nextToken() {
 
-
     while (pos < input.size() && std::isspace(input[pos])) {
-        pos++;
+        advance();
     }
 
 
     if (pos >= input.size())
-        return Token{TokenType::EoF, "", 0};
+        return Token{TokenType::EoF, "", line, column};
 
+    size_t tokenLine = line;
+    size_t tokenColumn = column;
     char c = input[pos];
 
-    // could implement a switch as well
-
-    if (c == '{') {pos++; return Token{TokenType::LBrace, "", 0};}
-    if (c == '}') {pos++; return Token{TokenType::RBrace, "", 0};}
-    if (c == '[') {pos++; return Token{TokenType::LBracket, "", 0};}
-    if (c == ']') {pos++; return Token{TokenType::RBracket, "", 0};}
-    if (c == ':') {pos++; return Token{TokenType::Colon, "", 0};}
-    if (c == ',') {pos++; return Token{TokenType::Comma, "", 0};}
+    if (c == '{') {advance(); return Token{TokenType::LBrace, "", tokenLine, tokenColumn};}
+    if (c == '}') {advance(); return Token{TokenType::RBrace, "", tokenLine, tokenColumn};}
+    if (c == '[') {advance(); return Token{TokenType::LBracket, "", tokenLine, tokenColumn};}
+    if (c == ']') {advance(); return Token{TokenType::RBracket, "", tokenLine, tokenColumn};}
+    if (c == ':') {advance(); return Token{TokenType::Colon, "", tokenLine, tokenColumn};}
+    if (c == ',') {advance(); return Token{TokenType::Comma, "", tokenLine, tokenColumn};}
 
     if (c == '"'){
 
         std::string buffer;
-        pos++;
+        advance();
         while (pos < input.size() && input[pos] != '"') {
             if (input[pos] == '\\') {
-                pos++;
+                advance();
 
                 if (pos >= input.size()) {
                     throw std::runtime_error("unterminated string escape");
@@ -67,13 +81,13 @@ Token Lexer::nextToken() {
                 buffer += input[pos];
             }
 
-            pos++;
+            advance();
         }
         if (pos >= input.size())
             throw std::runtime_error("unterminated string");
-        pos++;
+        advance();
 
-        return Token{TokenType::String, buffer, 0};
+        return Token{TokenType::String, buffer, tokenLine, tokenColumn};
     }
 
     if (std::isdigit(c) || c == '-') {
@@ -82,7 +96,7 @@ Token Lexer::nextToken() {
 
         if (input[pos] == '-') {
             buffer += input[pos];
-            pos++;
+            advance();
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 throw std::runtime_error("invalid number");
@@ -91,7 +105,7 @@ Token Lexer::nextToken() {
 
         if (input[pos] == '0') {
             buffer += input[pos];
-            pos++;
+            advance();
 
             if (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 throw std::runtime_error("invalid number");
@@ -100,13 +114,13 @@ Token Lexer::nextToken() {
         else {
             while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 buffer += input[pos];
-                pos++;
+                advance();
             }
         }
 
         if (pos < input.size() && input[pos] == '.') {
             buffer += input[pos];
-            pos++;
+            advance();
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 throw std::runtime_error("invalid number");
@@ -114,17 +128,17 @@ Token Lexer::nextToken() {
 
             while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 buffer += input[pos];
-                pos++;
+                advance();
             }
         }
 
         if (pos < input.size() && (input[pos] == 'e' || input[pos] == 'E')) {
             buffer += input[pos];
-            pos++;
+            advance();
 
             if (pos < input.size() && (input[pos] == '+' || input[pos] == '-')) {
                 buffer += input[pos];
-                pos++;
+                advance();
             }
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
@@ -133,7 +147,7 @@ Token Lexer::nextToken() {
 
             while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
                 buffer += input[pos];
-                pos++;
+                advance();
             }
         }
 
@@ -141,21 +155,40 @@ Token Lexer::nextToken() {
             throw std::runtime_error("invalid number");
         }
 
-        return Token{TokenType::Number, buffer, 0};
+        return Token{TokenType::Number, buffer, tokenLine, tokenColumn};
     }
 
     if (c == 't') {
-        if (input.substr(pos, 4) == "true") { pos += 4; return Token{TokenType::True, "", 0}; }
+        if (input.substr(pos, 4) == "true") {
+            advance();
+            advance();
+            advance();
+            advance();
+            return Token{TokenType::True, "", tokenLine, tokenColumn};
+        }
         throw std::runtime_error("unexpected character");
     }
 
     if (c == 'f') {
-        if (input.substr(pos, 5) == "false") { pos += 5; return Token{TokenType::False, "", 0}; }
+        if (input.substr(pos, 5) == "false") {
+            advance();
+            advance();
+            advance();
+            advance();
+            advance();
+            return Token{TokenType::False, "", tokenLine, tokenColumn};
+        }
         throw std::runtime_error("unexpected character");
     }
 
     if (c == 'n') {
-        if (input.substr(pos, 4) == "null") { pos += 4; return Token{TokenType::Null, "", 0}; }
+        if (input.substr(pos, 4) == "null") {
+            advance();
+            advance();
+            advance();
+            advance();
+            return Token{TokenType::Null, "", tokenLine, tokenColumn};
+        }
         throw std::runtime_error("unexpected character");
     }
 

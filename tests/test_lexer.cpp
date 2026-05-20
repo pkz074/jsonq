@@ -19,6 +19,29 @@ TEST_CASE("lexer reads punctuation tokens", "[lexer]") {
     REQUIRE(lexer.nextToken().type == TokenType::EoF);
 }
 
+TEST_CASE("lexer tracks token locations", "[lexer][location]") {
+    Lexer lexer("{\n  \"name\": true\n}");
+
+    Token leftBrace = lexer.nextToken();
+    REQUIRE(leftBrace.line == 1);
+    REQUIRE(leftBrace.column == 1);
+
+    Token name = lexer.nextToken();
+    REQUIRE(name.type == TokenType::String);
+    REQUIRE(name.line == 2);
+    REQUIRE(name.column == 3);
+
+    Token colon = lexer.nextToken();
+    REQUIRE(colon.type == TokenType::Colon);
+    REQUIRE(colon.line == 2);
+    REQUIRE(colon.column == 9);
+
+    Token boolean = lexer.nextToken();
+    REQUIRE(boolean.type == TokenType::True);
+    REQUIRE(boolean.line == 2);
+    REQUIRE(boolean.column == 11);
+}
+
 TEST_CASE("lexer reads literals and numbers", "[lexer]") {
     Lexer lexer(R"(true false null -12.5 0 3.14 6e2 -1.5E-3)");
 

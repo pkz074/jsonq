@@ -1,7 +1,18 @@
 #include "Parser.hpp"
 #include <stdexcept>
 #include "JsonValue.hpp"
+#include <sstream>
 #include <vector>
+
+namespace {
+
+std::string errorAt(const Token& token, const std::string& message) {
+    std::ostringstream oss;
+    oss << "line " << token.line << ", column " << token.column << ": " << message;
+    return oss.str();
+}
+
+}
 
 Parser::Parser(Lexer lexer) : lexer(lexer) {
     advance();
@@ -15,7 +26,7 @@ void Parser::advance() {
 void Parser::expect(TokenType type) {
 
     if (current.type != type)
-        throw std::runtime_error("unexpected token");
+        throw std::runtime_error(errorAt(current, "unexpected token"));
     advance();
 
 
@@ -25,7 +36,7 @@ JsonValue Parser::parse() {
     JsonValue value = parseValue();
 
     if (current.type != TokenType::EoF) {
-        throw std::runtime_error("unexpected token after JSON value");
+        throw std::runtime_error(errorAt(current, "unexpected token after JSON value"));
     }
 
     return value;
@@ -55,7 +66,7 @@ JsonValue Parser::parseObject() {
             advance();
             return JsonValue{obj};
         } else {
-            throw std::runtime_error("expected ',' or '}'");
+            throw std::runtime_error(errorAt(current, "expected ',' or '}'"));
         }
 
     }
@@ -80,7 +91,7 @@ JsonValue Parser::parseArray()  {
             advance();
             return JsonValue{arr};
         } else {
-            throw std::runtime_error("expected ']'");
+            throw std::runtime_error(errorAt(current, "expected ',' or ']'"));
         }
     }
 }
@@ -95,6 +106,6 @@ JsonValue Parser::parseValue() {
         case TokenType::True: advance(); return JsonValue{true};
         case TokenType::False: advance(); return JsonValue{false};
         case TokenType::Null: advance(); return JsonValue{nullptr};
-        default: throw std::runtime_error("Unexpected token");
+        default: throw std::runtime_error(errorAt(current, "unexpected token"));
     }
 }

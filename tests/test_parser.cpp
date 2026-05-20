@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <string>
 #include "parser/Parser.hpp"
 
 TEST_CASE("empty object", "[parser][object]") {
@@ -67,6 +68,21 @@ TEST_CASE("missing colon", "[parser][error]") {
 
     REQUIRE_THROWS_AS(parser.parse(), std::runtime_error);
 }
+
+TEST_CASE("parser errors include token location", "[parser][error]") {
+    std::string input = "{\n  \"name\" \"John\"\n}";
+    Lexer lexer(input);
+    Parser parser(lexer);
+
+    try {
+        parser.parse();
+        FAIL("expected parser error");
+    } catch (const std::runtime_error& e) {
+        std::string message = e.what();
+        REQUIRE(message.find("line 2, column 10") != std::string::npos);
+    }
+}
+
 TEST_CASE("invalid JSON", "[parser][error]") {
     REQUIRE_THROWS_AS(
         []() {
