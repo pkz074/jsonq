@@ -9,6 +9,8 @@ target_include_directories(jsonq PRIVATE src)
 
 
 include(FetchContent)
+enable_testing()
+
 FetchContent_Declare(
     Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -20,15 +22,19 @@ FetchContent_MakeAvailable(Catch2)
 add_executable(test_lexer tests/test_lexer.cpp src/lexer/lexer.cpp src/parser/Parser.cpp)
 target_include_directories(test_lexer PRIVATE src)
 target_link_libraries(test_lexer PRIVATE Catch2::Catch2WithMain)
+add_test(NAME lexer COMMAND test_lexer)
 
 add_executable(test_parser tests/test_parser.cpp src/lexer/lexer.cpp src/parser/Parser.cpp)
 target_include_directories(test_parser PRIVATE src)
 target_link_libraries(test_parser PRIVATE Catch2::Catch2WithMain)
+add_test(NAME parser COMMAND test_parser)
 
 add_executable(test_query tests/test_query.cpp src/query/QueryEngine.cpp src/lexer/lexer.cpp src/parser/Parser.cpp)
 target_include_directories(test_query PRIVATE src)
 target_link_libraries(test_query PRIVATE Catch2::Catch2WithMain)
+add_test(NAME query COMMAND test_query)
 
 add_executable(test_printer tests/test_printer.cpp src/printer/Printer.cpp)
 target_include_directories(test_printer PRIVATE src)
 target_link_libraries(test_printer PRIVATE Catch2::Catch2WithMain)
+add_test(NAME printer COMMAND test_printer)

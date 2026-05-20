@@ -60,6 +60,12 @@ yet.
 ## Tests
 
 ```bash
+ctest --test-dir build
+```
+
+You can also run individual test binaries:
+
+```bash
 ./build/test_lexer
 ./build/test_parser
 ./build/test_query
