@@ -79,11 +79,66 @@ Token Lexer::nextToken() {
     if (std::isdigit(c) || c == '-') {
 
         std::string buffer;
-        buffer += c;
-        pos++;
-        while (pos < input.size() && (std::isdigit(input[pos]) || input[pos] == '.')) {
+
+        if (input[pos] == '-') {
             buffer += input[pos];
             pos++;
+
+            if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                throw std::runtime_error("invalid number");
+            }
+        }
+
+        if (input[pos] == '0') {
+            buffer += input[pos];
+            pos++;
+
+            if (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                throw std::runtime_error("invalid number");
+            }
+        }
+        else {
+            while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                buffer += input[pos];
+                pos++;
+            }
+        }
+
+        if (pos < input.size() && input[pos] == '.') {
+            buffer += input[pos];
+            pos++;
+
+            if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                throw std::runtime_error("invalid number");
+            }
+
+            while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                buffer += input[pos];
+                pos++;
+            }
+        }
+
+        if (pos < input.size() && (input[pos] == 'e' || input[pos] == 'E')) {
+            buffer += input[pos];
+            pos++;
+
+            if (pos < input.size() && (input[pos] == '+' || input[pos] == '-')) {
+                buffer += input[pos];
+                pos++;
+            }
+
+            if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                throw std::runtime_error("invalid number");
+            }
+
+            while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
+                buffer += input[pos];
+                pos++;
+            }
+        }
+
+        if (pos < input.size() && (input[pos] == '.' || std::isalpha(static_cast<unsigned char>(input[pos])))) {
+            throw std::runtime_error("invalid number");
         }
 
         return Token{TokenType::Number, buffer, 0};

@@ -48,6 +48,18 @@ TEST_CASE("object with multiple fields", "[parser][object]") {
     REQUIRE(result["gpa"].asNumber() == Catch::Approx(3.8));
     REQUIRE(result["nickname"].isNull());
 }
+
+TEST_CASE("numbers with exponents", "[parser][number]") {
+    std::string input = R"({"big": 6e2, "small": -1.5E-3})";
+    Lexer lexer(input);
+    Parser parser(lexer);
+
+    JsonValue result = parser.parse();
+
+    REQUIRE(result["big"].asNumber() == Catch::Approx(600));
+    REQUIRE(result["small"].asNumber() == Catch::Approx(-0.0015));
+}
+
 TEST_CASE("missing colon", "[parser][error]") {
     std::string input = R"({"name" "John"})";
     Lexer lexer(input);
