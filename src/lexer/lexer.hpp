@@ -39,4 +39,7 @@ class Lexer {
     size_t column;
 
     char advance();
+    std::runtime_error errorAt(size_t errorLine, size_t errorColumn, const std::string& message) const;
+    std::runtime_error errorHere(const std::string& message) const;
+    unsigned int readUnicodeEscape();
 };

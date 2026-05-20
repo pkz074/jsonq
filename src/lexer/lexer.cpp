@@ -1,4 +1,67 @@
 #include "lexer.hpp"
+#include <cctype>
+#include <sstream>
+#include <stdexcept>
+
+namespace {
+
+int hexValue(char c) {
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    }
+    if (c >= 'a' && c <= 'f') {
+        return 10 + (c - 'a');
+    }
+    if (c >= 'A' && c <= 'F') {
+        return 10 + (c - 'A');
+    }
+    return -1;
+}
+
+bool isHighSurrogate(unsigned int codePoint) {
+    return codePoint >= 0xD800 && codePoint <= 0xDBFF;
+}
+
+bool isLowSurrogate(unsigned int codePoint) {
+    return codePoint >= 0xDC00 && codePoint <= 0xDFFF;
+}
+
+std::string encodeUtf8(unsigned int codePoint) {
+    std::string result;
+
+    if (codePoint <= 0x7F) {
+        result += static_cast<char>(codePoint);
+    }
+    else if (codePoint <= 0x7FF) {
+        result += static_cast<char>(0xC0 | (codePoint >> 6));
+        result += static_cast<char>(0x80 | (codePoint & 0x3F));
+    }
+    else if (codePoint <= 0xFFFF) {
+        result += static_cast<char>(0xE0 | (codePoint >> 12));
+        result += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
+        result += static_cast<char>(0x80 | (codePoint & 0x3F));
+    }
+    else {
+        result += static_cast<char>(0xF0 | (codePoint >> 18));
+        result += static_cast<char>(0x80 | ((codePoint >> 12) & 0x3F));
+        result += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
+        result += static_cast<char>(0x80 | (codePoint & 0x3F));
+    }
+
+    return result;
+}
+
+}
+
+std::runtime_error Lexer::errorAt(size_t errorLine, size_t errorColumn, const std::string& message) const {
+    std::ostringstream oss;
+    oss << "line " << errorLine << ", column " << errorColumn << ": " << message;
+    return std::runtime_error(oss.str());
+}
+
+std::runtime_error Lexer::errorHere(const std::string& message) const {
+    return errorAt(line, column, message);
+}
 
 char Lexer::advance() {
     char c = input[pos];
@@ -13,6 +76,26 @@ char Lexer::advance() {
     }
 
     return c;
+}
+
+unsigned int Lexer::readUnicodeEscape() {
+    unsigned int codePoint = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (pos >= input.size()) {
+            throw errorHere("unterminated unicode escape");
+        }
+
+        int digit = hexValue(input[pos]);
+        if (digit < 0) {
+            throw errorHere("invalid unicode escape");
+        }
+
+        codePoint = (codePoint << 4) | static_cast<unsigned int>(digit);
+        advance();
+    }
+
+    return codePoint;
 }
 
 Token Lexer::nextToken() {
@@ -45,7 +128,7 @@ Token Lexer::nextToken() {
                 advance();
 
                 if (pos >= input.size()) {
-                    throw std::runtime_error("unterminated string escape");
+                    throw errorHere("unterminated string escape");
                 }
 
                 switch (input[pos]) {
@@ -73,8 +156,33 @@ Token Lexer::nextToken() {
                     case 't':
                         buffer += '\t';
                         break;
+                    case 'u': {
+                        advance();
+                        unsigned int codePoint = readUnicodeEscape();
+
+                        if (isHighSurrogate(codePoint)) {
+                            if (pos + 1 >= input.size() || input[pos] != '\\' || input[pos + 1] != 'u') {
+                                throw errorHere("expected low surrogate after high surrogate");
+                            }
+
+                            advance();
+                            advance();
+                            unsigned int lowSurrogate = readUnicodeEscape();
+                            if (!isLowSurrogate(lowSurrogate)) {
+                                throw errorHere("expected low surrogate after high surrogate");
+                            }
+
+                            codePoint = 0x10000 + (((codePoint - 0xD800) << 10) | (lowSurrogate - 0xDC00));
+                        }
+                        else if (isLowSurrogate(codePoint)) {
+                            throw errorHere("unexpected low surrogate");
+                        }
+
+                        buffer += encodeUtf8(codePoint);
+                        continue;
+                    }
                     default:
-                        throw std::runtime_error("invalid string escape");
+                        throw errorHere("invalid string escape");
                 }
             }
             else {
@@ -84,7 +192,7 @@ Token Lexer::nextToken() {
             advance();
         }
         if (pos >= input.size())
-            throw std::runtime_error("unterminated string");
+            throw errorAt(tokenLine, tokenColumn, "unterminated string");
         advance();
 
         return Token{TokenType::String, buffer, tokenLine, tokenColumn};
@@ -99,7 +207,7 @@ Token Lexer::nextToken() {
             advance();
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
-                throw std::runtime_error("invalid number");
+                throw errorAt(tokenLine, tokenColumn, "invalid number");
             }
         }
 
@@ -108,7 +216,7 @@ Token Lexer::nextToken() {
             advance();
 
             if (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
-                throw std::runtime_error("invalid number");
+                throw errorAt(tokenLine, tokenColumn, "invalid number");
             }
         }
         else {
@@ -123,7 +231,7 @@ Token Lexer::nextToken() {
             advance();
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
-                throw std::runtime_error("invalid number");
+                throw errorAt(tokenLine, tokenColumn, "invalid number");
             }
 
             while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
@@ -142,7 +250,7 @@ Token Lexer::nextToken() {
             }
 
             if (pos >= input.size() || !std::isdigit(static_cast<unsigned char>(input[pos]))) {
-                throw std::runtime_error("invalid number");
+                throw errorAt(tokenLine, tokenColumn, "invalid number");
             }
 
             while (pos < input.size() && std::isdigit(static_cast<unsigned char>(input[pos]))) {
@@ -152,7 +260,7 @@ Token Lexer::nextToken() {
         }
 
         if (pos < input.size() && (input[pos] == '.' || std::isalpha(static_cast<unsigned char>(input[pos])))) {
-            throw std::runtime_error("invalid number");
+            throw errorAt(tokenLine, tokenColumn, "invalid number");
         }
 
         return Token{TokenType::Number, buffer, tokenLine, tokenColumn};
@@ -166,7 +274,7 @@ Token Lexer::nextToken() {
             advance();
             return Token{TokenType::True, "", tokenLine, tokenColumn};
         }
-        throw std::runtime_error("unexpected character");
+        throw errorAt(tokenLine, tokenColumn, "unexpected character");
     }
 
     if (c == 'f') {
@@ -178,7 +286,7 @@ Token Lexer::nextToken() {
             advance();
             return Token{TokenType::False, "", tokenLine, tokenColumn};
         }
-        throw std::runtime_error("unexpected character");
+        throw errorAt(tokenLine, tokenColumn, "unexpected character");
     }
 
     if (c == 'n') {
@@ -189,9 +297,9 @@ Token Lexer::nextToken() {
             advance();
             return Token{TokenType::Null, "", tokenLine, tokenColumn};
         }
-        throw std::runtime_error("unexpected character");
+        throw errorAt(tokenLine, tokenColumn, "unexpected character");
     }
 
-    throw std::runtime_error("unexpected character");
+    throw errorAt(tokenLine, tokenColumn, "unexpected character");
 
 }

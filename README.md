@@ -54,8 +54,8 @@ Supported query syntax:
   `$.users[*].name`.
 
 The JSON lexer supports common string escapes such as `\"`, `\\`, `\/`, `\n`,
-`\r`, `\t`, `\b`, and `\f`. Unicode escapes like `\u0041` are not implemented
-yet.
+`\r`, `\t`, `\b`, and `\f`, plus Unicode escapes like `\u0041` and surrogate
+pairs like `\uD83D\uDE00`.
 
 ## Tests
 

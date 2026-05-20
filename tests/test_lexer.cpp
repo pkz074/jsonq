@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <string>
 #include "lexer/lexer.hpp"
 
 TEST_CASE("single character tokens") {
@@ -81,6 +82,24 @@ TEST_CASE("lexer rejects invalid numbers", "[lexer][error]") {
     REQUIRE_THROWS_AS(Lexer("1e+").nextToken(), std::runtime_error);
 }
 
+TEST_CASE("lexer errors include location", "[lexer][error]") {
+    Lexer lexer("{\n  \"bad\": 01\n}");
+
+    try {
+        while (true) {
+            Token token = lexer.nextToken();
+            if (token.type == TokenType::EoF) {
+                break;
+            }
+        }
+        FAIL("expected lexer error");
+    } catch (const std::runtime_error& e) {
+        std::string message = e.what();
+        REQUIRE(message.find("line 2, column 10") != std::string::npos);
+        REQUIRE(message.find("invalid number") != std::string::npos);
+    }
+}
+
 TEST_CASE("lexer reads escaped strings", "[lexer][string]") {
     Lexer lexer(R"("a\"b\\c\n")");
 
@@ -88,6 +107,25 @@ TEST_CASE("lexer reads escaped strings", "[lexer][string]") {
 
     REQUIRE(token.type == TokenType::String);
     REQUIRE(token.value == "a\"b\\c\n");
+}
+
+TEST_CASE("lexer reads unicode escapes as utf-8", "[lexer][string]") {
+    Lexer ascii(R"("\u0041")");
+    REQUIRE(ascii.nextToken().value == "A");
+
+    Lexer latin1(R"("\u00E9")");
+    REQUIRE(latin1.nextToken().value == "\xC3\xA9");
+
+    Lexer surrogatePair(R"("\uD83D\uDE00")");
+    REQUIRE(surrogatePair.nextToken().value == "\xF0\x9F\x98\x80");
+}
+
+TEST_CASE("lexer rejects invalid unicode escapes", "[lexer][error]") {
+    REQUIRE_THROWS_AS(Lexer(R"("\u12")").nextToken(), std::runtime_error);
+    REQUIRE_THROWS_AS(Lexer(R"("\u12XZ")").nextToken(), std::runtime_error);
+    REQUIRE_THROWS_AS(Lexer(R"("\uD83D")").nextToken(), std::runtime_error);
+    REQUIRE_THROWS_AS(Lexer(R"("\uDE00")").nextToken(), std::runtime_error);
+    REQUIRE_THROWS_AS(Lexer(R"("\uD83D\u0041")").nextToken(), std::runtime_error);
 }
 
 TEST_CASE("lexer rejects unterminated strings", "[lexer][error]") {
