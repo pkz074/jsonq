@@ -3,11 +3,17 @@
 #include <vector>
 #include "parser/JsonValue.hpp"
 
+struct FilterExpr {
+    enum class Operator {Equal, NotEqual, Greater, Less, GreaterEqual, LessEqual} op;
+    std::string key;
+    JsonValue value;
+};
 
 struct Step {
-    enum class Kind {Key, Index, Wildcard} kind;
+    enum class Kind {Key, Index, Wildcard, Filter} kind;
     std::string key;
     size_t index;
+    FilterExpr filter;
 
 };
 

@@ -41,14 +41,25 @@ Select values with a query:
 ./build/jsonq sample.json '$.name'
 ./build/jsonq sample.json '$.hobbies[1]'
 ./build/jsonq sample.json '$.hobbies[*]'
+./build/jsonq sample.json '$.*'
+./build/jsonq sample.json '$["display name"]'
+./build/jsonq sample.json '$.users[?age>25].name'
+./build/jsonq sample.json '$.users[?"display name"=="Alice"]'
 ```
 
 Supported query syntax:
 
 - `$` selects the whole document.
 - `.key` selects an object field.
+- `["key"]` selects an object field with a quoted key, useful for keys with
+  spaces or dots.
 - `[n]` selects an array element by zero-based index.
 - `[*]` selects every element from an array and returns an array.
+- `.*` selects every value from an object and returns an array.
+- `[?key==value]` filters an array of objects by a direct field. Quote the key
+  as `[?"display name"==value]` when it contains spaces or dots. Supported
+  operators are `==`, `!=`, `>`, `<`, `>=`, and `<=`; supported values are
+  numbers, strings, booleans, and `null`.
 - These can be combined, for example `$.user.hobbies[0]`.
 - Path steps after `[*]` are applied to every selected element, for example
   `$.users[*].name`.
