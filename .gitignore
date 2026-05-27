@@ -14,5 +14,6 @@ AGENTS.md
 
 .DS_Store
 .vscode/
+.zed/
 .idea/
 *.swp

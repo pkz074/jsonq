@@ -75,13 +75,16 @@ The JSON lexer supports common string escapes such as `\"`, `\\`, `\/`, `\n`,
 pairs like `\uD83D\uDE00`.
 
 Schema files are JSON objects whose keys are required field names and whose
-values are type strings:
+values are type strings or nested object schemas:
 
 ```json
 {
   "name": "string",
   "age": "number",
-  "active": "bool"
+  "active": "bool",
+  "profile": {
+    "city": "string"
+  }
 }
 ```
 

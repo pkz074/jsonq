@@ -63,6 +63,71 @@ bool matchesType(const JsonValue& value, const std::string& type) {
     return false;
 }
 
+std::string fieldPath(const std::string& prefix, const std::string& fieldName) {
+    if (prefix.empty()) {
+        return fieldName;
+    }
+
+    return prefix + "." + fieldName;
+}
+
+void validateSchemaObject(const JsonValue& schema, const std::string& pathPrefix, SchemaResult& result) {
+    for (const auto& rule : schema.asObject()) {
+        const std::string& fieldName = rule.first;
+        const std::string path = fieldPath(pathPrefix, fieldName);
+        const JsonValue& expectedTypeValue = rule.second;
+
+        if (expectedTypeValue.isObject()) {
+            validateSchemaObject(expectedTypeValue, path, result);
+            continue;
+        }
+
+        if (!expectedTypeValue.isString()) {
+            result.valid = false;
+            result.errors.push_back("schema field " + path + " must be a type string or object schema");
+            continue;
+        }
+
+        std::string expectedType = expectedTypeValue.asString();
+        if (!isKnownType(expectedType)) {
+            result.valid = false;
+            result.errors.push_back("schema field " + path + " has unknown type: " + expectedType);
+        }
+    }
+}
+
+void validateObject(const JsonValue& document, const JsonValue& schema, const std::string& pathPrefix, SchemaResult& result) {
+    for (const auto& rule : schema.asObject()) {
+        const std::string& fieldName = rule.first;
+        const std::string path = fieldPath(pathPrefix, fieldName);
+        const JsonValue& expectedTypeValue = rule.second;
+
+        const JsonValue* actualValue = findField(document, fieldName);
+        if (actualValue == nullptr) {
+            result.valid = false;
+            result.errors.push_back("missing required field: " + path);
+            continue;
+        }
+
+        if (expectedTypeValue.isObject()) {
+            if (!actualValue->isObject()) {
+                result.valid = false;
+                result.errors.push_back("field " + path + " expected object but got " + typeName(*actualValue));
+                continue;
+            }
+
+            validateObject(*actualValue, expectedTypeValue, path, result);
+            continue;
+        }
+
+        std::string expectedType = expectedTypeValue.asString();
+        if (!matchesType(*actualValue, expectedType)) {
+            result.valid = false;
+            result.errors.push_back("field " + path + " expected " + expectedType + " but got " + typeName(*actualValue));
+        }
+    }
+}
+
 }
 
 SchemaResult SchemaValidator::validate(const JsonValue& document, const JsonValue& schema) const {
@@ -80,35 +145,12 @@ SchemaResult SchemaValidator::validate(const JsonValue& document, const JsonValu
         return result;
     }
 
-    for (const auto& rule : schema.asObject()) {
-        const std::string& fieldName = rule.first;
-        const JsonValue& expectedTypeValue = rule.second;
-
-        if (!expectedTypeValue.isString()) {
-            result.valid = false;
-            result.errors.push_back("schema field " + fieldName + " must be a type string");
-            continue;
-        }
-
-        std::string expectedType = expectedTypeValue.asString();
-        if (!isKnownType(expectedType)) {
-            result.valid = false;
-            result.errors.push_back("schema field " + fieldName + " has unknown type: " + expectedType);
-            continue;
-        }
-
-        const JsonValue* actualValue = findField(document, fieldName);
-        if (actualValue == nullptr) {
-            result.valid = false;
-            result.errors.push_back("missing required field: " + fieldName);
-            continue;
-        }
-
-        if (!matchesType(*actualValue, expectedType)) {
-            result.valid = false;
-            result.errors.push_back("field " + fieldName + " expected " + expectedType + " but got " + typeName(*actualValue));
-        }
+    validateSchemaObject(schema, "", result);
+    if (!result.valid) {
+        return result;
     }
+
+    validateObject(document, schema, "", result);
 
     return result;
 }

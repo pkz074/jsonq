@@ -81,5 +81,86 @@ TEST_CASE("schema validator rejects invalid schema documents", "[schema]") {
     REQUIRE(invalidTypeName.errors[0] == "schema field name has unknown type: text");
 
     REQUIRE_FALSE(nonStringRule.valid);
-    REQUIRE(nonStringRule.errors[0] == "schema field age must be a type string");
+    REQUIRE(nonStringRule.errors[0] == "schema field age must be a type string or object schema");
+}
+
+TEST_CASE("schema validator accepts nested object schemas", "[schema]") {
+    SchemaValidator validator;
+    JsonValue schema{JsonObject{
+        {"name", JsonValue{"string"}},
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{"string"}},
+            {"active", JsonValue{"bool"}},
+        }}},
+    }};
+    JsonValue document{JsonObject{
+        {"name", JsonValue{"Alice"}},
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{"Toronto"}},
+            {"active", JsonValue{true}},
+        }}},
+    }};
+
+    SchemaResult result = validator.validate(document, schema);
+
+    REQUIRE(result.valid);
+    REQUIRE(result.errors.empty());
+}
+
+TEST_CASE("schema validator reports nested schema errors with paths", "[schema][error]") {
+    SchemaValidator validator;
+    JsonValue schema{JsonObject{
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{"string"}},
+            {"active", JsonValue{"bool"}},
+        }}},
+    }};
+    JsonValue document{JsonObject{
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{42.0}},
+        }}},
+    }};
+
+    SchemaResult result = validator.validate(document, schema);
+
+    REQUIRE_FALSE(result.valid);
+    REQUIRE(result.errors.size() == 2);
+    REQUIRE(result.errors[0] == "field profile.city expected string but got number");
+    REQUIRE(result.errors[1] == "missing required field: profile.active");
+}
+
+TEST_CASE("schema validator requires document fields to match nested schema objects", "[schema][error]") {
+    SchemaValidator validator;
+    JsonValue schema{JsonObject{
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{"string"}},
+        }}},
+    }};
+    JsonValue document{JsonObject{
+        {"profile", JsonValue{"Toronto"}},
+    }};
+
+    SchemaResult result = validator.validate(document, schema);
+
+    REQUIRE_FALSE(result.valid);
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0] == "field profile expected object but got string");
+}
+
+TEST_CASE("schema validator rejects invalid nested schema documents", "[schema][error]") {
+    SchemaValidator validator;
+    JsonValue schema{JsonObject{
+        {"profile", JsonValue{JsonObject{
+            {"city", JsonValue{"text"}},
+            {"age", JsonValue{30.0}},
+        }}},
+    }};
+    JsonValue document{JsonObject{}};
+
+    SchemaResult result = validator.validate(document, schema);
+
+    REQUIRE_FALSE(result.valid);
+    REQUIRE(result.errors.size() == 2);
+    REQUIRE(result.errors[0] == "schema field profile.city has unknown type: text");
+    REQUIRE(result.errors[1] == "schema field profile.age must be a type string or object schema");
 }
