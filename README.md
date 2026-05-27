@@ -18,7 +18,7 @@ Work in progress. Being built layer by layer:
 - [x] Basic CLI for reading and pretty-printing a JSON file
 - [x] Basic Query Engine for object keys and array indices
 - [x] Basic Schema Validator
-- [ ] Benchmarks
+- [x] Basic Benchmarks
 
 ## Build
 
@@ -103,6 +103,17 @@ You can also run individual test binaries:
 ./build/test_printer
 ./build/test_schema
 ```
+
+## Benchmarks
+
+Run the lightweight benchmark executable:
+
+```bash
+./build/bench_jsonq
+```
+
+It measures parsing, filtered query evaluation, pretty-printing, and schema
+validation over a generated JSON document.
 
 ## Tech
 

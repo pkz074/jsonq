@@ -43,3 +43,6 @@ add_executable(test_schema tests/test_schema.cpp src/schema/SchemaValidator.cpp)
 target_include_directories(test_schema PRIVATE src)
 target_link_libraries(test_schema PRIVATE Catch2::Catch2WithMain)
 add_test(NAME schema COMMAND test_schema)
+
+add_executable(bench_jsonq benchmarks/bench_jsonq.cpp src/lexer/lexer.cpp src/parser/Parser.cpp src/printer/Printer.cpp src/query/QueryEngine.cpp src/schema/SchemaValidator.cpp)
+target_include_directories(bench_jsonq PRIVATE src)
