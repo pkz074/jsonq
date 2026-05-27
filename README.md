@@ -17,7 +17,7 @@ Work in progress. Being built layer by layer:
 - [x] Pretty Printer
 - [x] Basic CLI for reading and pretty-printing a JSON file
 - [x] Basic Query Engine for object keys and array indices
-- [ ] Schema Validator
+- [x] Basic Schema Validator
 - [ ] Benchmarks
 
 ## Build
@@ -47,6 +47,12 @@ Select values with a query:
 ./build/jsonq sample.json '$.users[?"display name"=="Alice"]'
 ```
 
+Validate a JSON file against a simple schema:
+
+```bash
+./build/jsonq --schema user.schema.json user.json
+```
+
 Supported query syntax:
 
 - `$` selects the whole document.
@@ -68,6 +74,20 @@ The JSON lexer supports common string escapes such as `\"`, `\\`, `\/`, `\n`,
 `\r`, `\t`, `\b`, and `\f`, plus Unicode escapes like `\u0041` and surrogate
 pairs like `\uD83D\uDE00`.
 
+Schema files are JSON objects whose keys are required field names and whose
+values are type strings:
+
+```json
+{
+  "name": "string",
+  "age": "number",
+  "active": "bool"
+}
+```
+
+Supported schema types are `string`, `number`, `bool`, `null`, `array`, and
+`object`.
+
 ## Tests
 
 ```bash
@@ -81,6 +101,7 @@ You can also run individual test binaries:
 ./build/test_parser
 ./build/test_query
 ./build/test_printer
+./build/test_schema
 ```
 
 ## Tech

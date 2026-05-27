@@ -5,28 +5,66 @@
 #include "parser/Parser.hpp"
 #include "printer/Printer.hpp"
 #include "query/QueryEngine.hpp"
+#include "schema/SchemaValidator.hpp"
+
+namespace {
+
+std::string readFile(const std::string& path) {
+    std::ifstream file(path);
+
+    if (!file) {
+        throw std::runtime_error("could not open file " + path);
+    }
+
+    return std::string((std::istreambuf_iterator<char>(file)),
+                       std::istreambuf_iterator<char>());
+}
+
+JsonValue parseFile(const std::string& path) {
+    std::string contents = readFile(path);
+    Lexer lexer(contents);
+    Parser parser(lexer);
+    return parser.parse();
+}
+
+void printUsage(const char* programName) {
+    std::cout << "Usage: " << programName << " <json_file> [query]\n"
+              << "       " << programName << " --schema <schema_file> <json_file>" << std::endl;
+}
+
+}
 
 int main(int argc, char *argv[]) {
 
     if (argc < 2) {
-            std::cout << "Usage: " << argv[0] << " <json_file> [query]" << std::endl;
-            return EXIT_FAILURE;
-        }
-
-    std::ifstream file(argv[1]);
-
-    if (!file){
-        std::cerr << "error: could not open file" << argv[1] << std::endl;
-        return 1;
+        printUsage(argv[0]);
+        return EXIT_FAILURE;
     }
 
-    std::string contents((std::istreambuf_iterator<char>(file)),
-                          std::istreambuf_iterator<char>());
-
     try {
-        Lexer lexer(contents);
-        Parser parser(lexer);
-        JsonValue result = parser.parse();
+        if (std::string(argv[1]) == "--schema") {
+            if (argc != 4) {
+                printUsage(argv[0]);
+                return EXIT_FAILURE;
+            }
+
+            JsonValue schema = parseFile(argv[2]);
+            JsonValue document = parseFile(argv[3]);
+            SchemaValidator validator;
+            SchemaResult result = validator.validate(document, schema);
+
+            if (result.valid) {
+                std::cout << "valid" << std::endl;
+                return 0;
+            }
+
+            for (const std::string& error : result.errors) {
+                std::cerr << "error: " << error << std::endl;
+            }
+            return 1;
+        }
+
+        JsonValue result = parseFile(argv[1]);
 
         if (argc >= 3) {
             QueryEngine queryEngine;
