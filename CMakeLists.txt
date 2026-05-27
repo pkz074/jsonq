@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
-project(jsonq)
+project(jsonq VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_executable(jsonq src/main.cpp src/lexer/lexer.cpp src/parser/Parser.cpp src/printer/Printer.cpp src/query/QueryEngine.cpp src/schema/SchemaValidator.cpp)
 target_include_directories(jsonq PRIVATE src)
+target_compile_definitions(jsonq PRIVATE JSONQ_VERSION="${PROJECT_VERSION}")
+install(TARGETS jsonq RUNTIME DESTINATION bin)
 
 
 

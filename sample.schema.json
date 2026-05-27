@@ -1,0 +1,10 @@
+{
+  "name": "string",
+  "age": "number",
+  "active": "bool",
+  "profile": {
+    "city": "string"
+  },
+  "hobbies": "array",
+  "users": "array"
+}

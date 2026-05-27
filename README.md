@@ -10,7 +10,7 @@ any parsing libraries.
 
 ## Status
 
-Work in progress. Being built layer by layer:
+Portfolio/demo-ready. Built layer by layer:
 
 - [x] Lexer
 - [x] Parser + AST
@@ -27,7 +27,20 @@ cmake -S . -B build
 cmake --build build
 ```
 
+Install the CLI after building:
+
+```bash
+cmake --install build --prefix ~/.local
+```
+
 ## Usage
+
+Show CLI help and version:
+
+```bash
+./build/jsonq --help
+./build/jsonq --version
+```
 
 Pretty-print a JSON file:
 
@@ -44,13 +57,13 @@ Select values with a query:
 ./build/jsonq sample.json '$.*'
 ./build/jsonq sample.json '$["display name"]'
 ./build/jsonq sample.json '$.users[?age>25].name'
-./build/jsonq sample.json '$.users[?"display name"=="Alice"]'
+./build/jsonq sample.json '$.users[?"display name"=="Alice Smith"].name'
 ```
 
 Validate a JSON file against a simple schema:
 
 ```bash
-./build/jsonq --schema user.schema.json user.json
+./build/jsonq --schema sample.schema.json sample.json
 ```
 
 Supported query syntax:

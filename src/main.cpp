@@ -2,10 +2,15 @@
 #include <string>
 #include <fstream>
 #include <exception>
+#include <cstdlib>
 #include "parser/Parser.hpp"
 #include "printer/Printer.hpp"
 #include "query/QueryEngine.hpp"
 #include "schema/SchemaValidator.hpp"
+
+#ifndef JSONQ_VERSION
+#define JSONQ_VERSION "dev"
+#endif
 
 namespace {
 
@@ -28,8 +33,19 @@ JsonValue parseFile(const std::string& path) {
 }
 
 void printUsage(const char* programName) {
-    std::cout << "Usage: " << programName << " <json_file> [query]\n"
-              << "       " << programName << " --schema <schema_file> <json_file>" << std::endl;
+    std::cout << "Usage:\n"
+              << "  " << programName << " <json_file> [query]\n"
+              << "  " << programName << " --schema <schema_file> <json_file>\n"
+              << "  " << programName << " --help\n"
+              << "  " << programName << " --version\n\n"
+              << "Query examples:\n"
+              << "  $.name\n"
+              << "  $.hobbies[1]\n"
+              << "  $.users[?age>=30].name\n";
+}
+
+void printVersion() {
+    std::cout << "jsonq " << JSONQ_VERSION << std::endl;
 }
 
 }
@@ -42,7 +58,19 @@ int main(int argc, char *argv[]) {
     }
 
     try {
-        if (std::string(argv[1]) == "--schema") {
+        std::string command = argv[1];
+
+        if (command == "--help" || command == "-h") {
+            printUsage(argv[0]);
+            return EXIT_SUCCESS;
+        }
+
+        if (command == "--version") {
+            printVersion();
+            return EXIT_SUCCESS;
+        }
+
+        if (command == "--schema") {
             if (argc != 4) {
                 printUsage(argv[0]);
                 return EXIT_FAILURE;
@@ -62,6 +90,15 @@ int main(int argc, char *argv[]) {
                 std::cerr << "error: " << error << std::endl;
             }
             return 1;
+        }
+
+        if (!command.empty() && command[0] == '-') {
+            throw std::runtime_error("unknown option: " + command);
+        }
+
+        if (argc > 3) {
+            printUsage(argv[0]);
+            return EXIT_FAILURE;
         }
 
         JsonValue result = parseFile(argv[1]);
